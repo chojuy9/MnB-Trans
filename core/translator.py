@@ -40,7 +40,7 @@ class TextProcessor:
         try:
             genai.configure(api_key=api_key)
             # 모델명은 설정에서 가져오거나, 상수로 정의하는 것이 좋음
-            model_name = 'gemini-1.5-flash-preview-0409' # 실제 사용 가능한 모델명으로 변경 필요
+            model_name = 'gemini-2.5-flash-preview-04-17' # 실제 사용 가능한 모델명으로 변경 필요
             model = genai.GenerativeModel(model_name)
             prompt = f"""Translate the following English text from a Mount & Blade game mod into Korean.
 Preserve special placeholders like __MNBTAG_S{{s0}}__, __MNBTAG_REG{{reg0}}__, or __MNBTAG_PLAYERNAME__ exactly as they are.
