@@ -74,7 +74,7 @@ Korean Translation:
             return None
 
 
-    def translate_by_chunks(self, full_text, api_key, chunk_size_lines=DEFAULT_CHUNK_SIZE_LINES):
+    def translate_by_chunks(self, full_text, api_key, chunk_size_lines=DEFAULT_CHUNK_SIZE_FOR_TRANSLATOR):
         """텍스트를 청크 단위로 나누어 번역합니다."""
         if not api_key:
             # messagebox.showerror("API 키 오류", "Gemini API 키가 설정되지 않았습니다.") # GUI에서 처리
@@ -83,7 +83,8 @@ Korean Translation:
 
         lines = full_text.splitlines(keepends=True) # 줄바꿈 문자 유지하며 분리
         translated_chunks = []
-        total_chunks = (len(lines) + chunk_size_lines - 1) // chunk_size_lines # 총 청크 수 계산
+        total_chunks = (len(lines) + chunk_size_lines - 1) // chunk_size_lines # 올림 계산
+        # chunk_size_lines = 50 # 기본값 또는 설정에서 가져오기
 
         model_name = 'gemini-2.5-flash-preview-04-17' # 설정 또는 상수로 관리
 
