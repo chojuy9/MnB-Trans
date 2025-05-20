@@ -122,22 +122,23 @@ class CoreTranslatorApp:
             return
 
         self.toggle_buttons_state(tk.DISABLED)
-        self.update_status("번역 준비 중...")
+        self.update_status("전체 번역 시작... (청크 단위 처리)")
 
         try:
-            preprocessed_text = self.text_processor.mnb_preprocess_text(original_content)
-            # API 키를 TextProcessor의 메소드에 전달
-            translated_text_raw = self.text_processor.call_gemini_api(preprocessed_text, self.api_key)
+            # TextProcessor의 translate_by_chunks 메소드 호출
+            # API 키와 (선택적) 청크 크기 전달
+            final_translation_by_chunks = self.text_processor.translate_by_chunks(original_content, self.api_key)
 
-            if translated_text_raw:
-                final_translation = self.text_processor.mnb_postprocess_text(translated_text_raw.strip())
+            if final_translation_by_chunks is not None: # None은 전체 번역 실패 또는 중단을 의미할 수 있음
                 self.translated_text_area.config(state=tk.NORMAL)
                 self.translated_text_area.delete("1.0", tk.END)
-                self.translated_text_area.insert(tk.END, final_translation)
+                self.translated_text_area.insert(tk.END, final_translation_by_chunks.strip()) # 마지막에 불필요한 공백 제거
                 self.translated_text_area.config(state=tk.DISABLED)
                 self.unsaved_translation = True
-                self.update_status("번역 완료!")
-            # else: call_gemini_api에서 이미 메시지 처리 및 상태 업데이트
+                self.update_status("전체 번역 완료! (청크 단위)")
+            else:
+                # translate_by_chunks 내부에서 이미 오류 메시지 및 상태 업데이트 가능성 있음
+                self.update_status("전체 번역 실패 또는 중단됨.")
         except Exception as e:
             messagebox.showerror("번역 오류", f"번역 중 예상치 못한 오류 발생: {e}")
             self.update_status(f"오류: 번역 중 오류 - {e}")
