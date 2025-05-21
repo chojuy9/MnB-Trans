@@ -1,0 +1,20 @@
+[
+  {
+    "id": "dialogue_v1",
+    "name": "M&B 대화 번역 (기본)",
+    "description": "Mount & Blade 대화문을 한국어로 번역합니다. 태그를 보호하고 자연스러운 어투를 사용합니다.",
+    "template": "Translate the following English dialogue from a Mount & Blade game mod into Korean. Maintain a natural tone suitable for a medieval game. Preserve special placeholders like __MNBTAG_S{{s0}}__, __MNBTAG_REG{{reg0}}__, or __MNBTAG_PLAYERNAME__ exactly as they are. Do not translate the content inside these placeholders.\n\nEnglish Dialogue:\n{text_to_translate}\n\nKorean Translation:"
+  },
+  {
+    "id": "item_desc_v1",
+    "name": "M&B 아이템 설명 번역",
+    "description": "아이템 설명을 간결하고 명확하게 번역하며, 게임 내 분위기를 유지합니다.",
+    "template": "Translate the following English item description from a Mount & Blade game mod into Korean. The translation should be concise, clear, and fit the game's atmosphere. Preserve special placeholders like __MNBTAG_S{{s0}}__, __MNBTAG_REG{{reg0}}__, etc., exactly.\n\nEnglish Description:\n{text_to_translate}\n\nKorean Translation:"
+  },
+  {
+    "id": "generic_text_v1",
+    "name": "M&B 일반 텍스트 (태그 보호)",
+    "description": "일반적인 게임 내 텍스트를 번역하며 태그를 보호합니다. (예: UI 텍스트)",
+    "template": "Translate the following English text from a Mount & Blade game mod to Korean. Preserve any special placeholders (e.g., __MNBTAG_...__) exactly as they appear.\n\nEnglish Text:\n{text_to_translate}\n\nKorean Translation:"
+  }
+]
