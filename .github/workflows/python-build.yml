@@ -63,6 +63,8 @@ jobs:
       - name: Create archive of the build directory
         run: |
           # PyInstaller 빌드 결과물들이 있는 dist_build 폴더로 이동합니다.
+          # 이전 로그에서 확인했듯이, MnbTranslator 폴더는 dist_build 내에 없습니다.
+          # 파일들은 dist_build 바로 아래에 있습니다.
           cd ./dist_build
           
           echo "--- Current directory after cd (should be dist_build) ---"
