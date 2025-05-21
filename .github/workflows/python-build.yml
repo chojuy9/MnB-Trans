@@ -40,26 +40,27 @@ jobs:
   create-release:
     needs: build-windows
     if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest # 릴리즈 생성은 OS 무관
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download Windows artifact (directory) # 아티팩트 이름 및 다운로드 경로 수정
+      - name: Download Windows artifact (directory)
         uses: actions/download-artifact@v4
         with:
-          name: MnbTranslator-Windows-dir # 위에서 업로드한 아티팩트 이름과 일치
-          path: dist_build # 다운로드 받을 임시 폴더 이름
+          name: MnbTranslator-Windows-dir # 이전 단계에서 업로드한 아티팩트 이름
+          path: ./dist_build              # 현재 작업 디렉토리 아래에 dist_build 폴더를 만들고 여기에 아티팩트 내용 다운로드
 
-      # --onedir로 빌드된 결과는 폴더이므로, 압축하여 릴리즈에 첨부하는 것이 일반적입니다.
+      - name: List downloaded files # 다운로드된 파일 목록 확인 (디버깅용)
+        run: ls -R ./dist_build
+
       - name: Create archive of the build directory
         run: |
-          cd dist_build/MnbTranslator # PyInstaller가 생성한 폴더로 이동 (MnbTranslator 폴더 안으로)
-          zip -r ../MnbTranslator-Windows-${{ github.ref_name }}.zip . # 현재 폴더 내용을 zip으로 압축 (한 단계 상위 폴더에 생성)
-          # Windows Runner에서는 zip 명령 대신 PowerShell의 Compress-Archive 사용 가능
-          # (runs-on: windows-latest 로 변경하고)
-          # Compress-Archive -Path dist_build/MnbTranslator/* -DestinationPath dist_build/MnbTranslator-Windows-${{ github.ref_name }}.zip
-        # 위 zip 명령은 Ubuntu/macOS Runner에서 잘 동작합니다.
-        # 현재 create-release 작업은 ubuntu-latest에서 실행되므로 zip 명령 사용이 적절합니다.
+          # dist_build 폴더 안에 PyInstaller 빌드 결과물(MnbTranslator.exe 등)이 직접 위치함
+          cd ./dist_build
+          # 현재 디렉토리(./dist_build)의 모든 내용을 포함하여 zip 파일 생성
+          # zip 파일은 한 단계 상위, 즉 작업 공간 루트에 생성됨
+          zip -r ../MnbTranslator-Windows-${{ github.ref_name }}.zip .
+        # Ubuntu Runner에서는 위 zip 명령이 잘 동작합니다.
 
       - name: Create Release
         id: create_release
@@ -72,12 +73,13 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Upload Release Asset (Windows ZIP) # 업로드할 에셋 경로 및 이름 수정
+      - name: Upload Release Asset (Windows ZIP)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist_build/MnbTranslator-Windows-${{ github.ref_name }}.zip # 압축된 zip 파일 경로
-          asset_name: MnbTranslator-Windows-${{ github.ref_name }}.zip # 릴리즈에 표시될 zip 파일 이름
+          # 압축 파일은 작업 공간 루트에 생성되었으므로 경로 수정
+          asset_path: ./MnbTranslator-Windows-${{ github.ref_name }}.zip
+          asset_name: MnbTranslator-Windows-${{ github.ref_name }}.zip
           asset_content_type: application/zip
