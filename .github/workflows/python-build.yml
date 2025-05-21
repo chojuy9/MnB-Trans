@@ -4,61 +4,74 @@ on:
   push:
     branches: [ "main" ]
     tags:
-      - 'v*'
+      - 'v*' # 'v'로 시작하는 태그 (예: v1.0.0, v1.1.0)
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build-windows: # Windows용 실행 파일 빌드 작업
+    runs-on: windows-latest # Windows 실행 환경 사용
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4 # 코드 가져오기
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11' # 사용하는 파이썬 버전
+        python-version: '3.11' # 사용할 파이썬 버전 지정
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller google-generativeai # Pillow 등 다른 라이브러리도 필요하면 추가
-        # 또는 requirements.txt 사용:
+        # 만약 requirements.txt 파일이 있다면:
         # pip install -r requirements.txt
 
-    - name: Build with PyInstaller (onedir) # 단계 이름에 (onedir) 추가하여 명시
+    - name: Build with PyInstaller (onedir)
       run: |
         pyinstaller --name MnbTranslator --onedir --windowed --icon="assets/app_icon.ico" --add-data "data:data" --add-data "assets:assets" main.py
-        # '--onefile' 옵션을 '--onedir'로 변경했습니다.
+        # '--onefile' 옵션 대신 '--onedir' 사용
 
-    - name: Archive build artifacts (Windows) # 아티팩트 이름 및 경로 수정
+    - name: Archive build artifacts (Windows directory)
       uses: actions/upload-artifact@v4
       with:
-        name: MnbTranslator-Windows-dir # 아티팩트 이름에 -dir 추가하여 구분
-        path: dist/MnbTranslator # '--onedir'로 빌드하면 'dist/YourAppName' 폴더가 생성됨
+        name: MnbTranslator-Windows-dir # 아티팩트 이름 (폴더 내용물)
+        path: dist/MnbTranslator       # PyInstaller가 생성한 폴더 경로 (이 폴더 안의 내용이 업로드됨)
 
-  create-release:
-    needs: build-windows
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
+  create-release: # 릴리즈 생성 및 에셋 업로드 작업 (태그 푸시 시에만 실행)
+    needs: build-windows # build-windows 작업이 성공해야 실행
+    if: startsWith(github.ref, 'refs/tags/') # Git 태그가 푸시된 경우에만 이 작업 실행
+    runs-on: ubuntu-latest # 릴리즈 생성 및 압축 작업은 Ubuntu에서 실행 (zip 명령어 사용)
     permissions:
-      contents: write
+      contents: write # 릴리즈 생성 및 에셋 업로드를 위한 권한
     steps:
-      - name: Download Windows artifact (directory)
+      - name: Download Windows artifact (directory contents)
         uses: actions/download-artifact@v4
         with:
-          name: MnbTranslator-Windows-dir # 이전 단계에서 업로드한 아티팩트 이름
+          name: MnbTranslator-Windows-dir # build-windows에서 업로드한 아티팩트 이름과 일치
           path: ./dist_build              # 현재 작업 디렉토리 아래에 dist_build 폴더를 만들고 여기에 아티팩트 내용 다운로드
 
-      - name: List downloaded files # 다운로드된 파일 목록 확인 (디버깅용)
-        run: ls -R ./dist_build
+      - name: Debug - List downloaded files and directories
+        run: |
+          echo "--- Current directory (workspace root before cd) ---"
+          pwd
+          echo "--- Listing workspace root ---"
+          ls -A .
+          echo "--- Listing dist_build (where artifacts were downloaded) ---"
+          ls -AR ./dist_build # 이 로그를 통해 실제 파일 구조 확인
 
       - name: Create archive of the build directory
         run: |
-          # dist_build 폴더 안에 PyInstaller 빌드 결과물(MnbTranslator.exe 등)이 직접 위치함
+          # PyInstaller 빌드 결과물들이 있는 dist_build 폴더로 이동합니다.
           cd ./dist_build
-          # 현재 디렉토리(./dist_build)의 모든 내용을 포함하여 zip 파일 생성
-          # zip 파일은 한 단계 상위, 즉 작업 공간 루트에 생성됨
+          
+          echo "--- Current directory after cd (should be dist_build) ---"
+          pwd
+          echo "--- Listing contents of current directory (dist_build) ---"
+          ls -A
+
+          # 현재 디렉토리(./dist_build)의 모든 내용을 포함하여 zip 파일을 생성합니다.
+          # zip 파일은 한 단계 상위 폴더, 즉 작업 공간 루트에 생성됩니다.
           zip -r ../MnbTranslator-Windows-${{ github.ref_name }}.zip .
         # Ubuntu Runner에서는 위 zip 명령이 잘 동작합니다.
 
@@ -66,20 +79,19 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub에서 자동으로 제공하는 토큰
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+          tag_name: ${{ github.ref_name }} # 현재 푸시된 태그 이름 사용 (예: v1.1.0)
+          release_name: Release ${{ github.ref_name }} # 릴리즈 이름 (예: Release v1.1.0)
+          draft: false      # 정식 릴리즈로 생성 (true로 하면 초안)
+          prerelease: false # 정식 릴리즈 (true로 하면 사전 릴리즈)
 
       - name: Upload Release Asset (Windows ZIP)
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          # 압축 파일은 작업 공간 루트에 생성되었으므로 경로 수정
-          asset_path: ./MnbTranslator-Windows-${{ github.ref_name }}.zip
-          asset_name: MnbTranslator-Windows-${{ github.ref_name }}.zip
-          asset_content_type: application/zip
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # Create Release 단계에서 생성된 업로드 URL
+          asset_path: ./MnbTranslator-Windows-${{ github.ref_name }}.zip # 작업 공간 루트에 생성된 zip 파일 경로
+          asset_name: MnbTranslator-Windows-${{ github.ref_name }}.zip # 릴리즈에 표시될 zip 파일 이름
+          asset_content_type: application/zip # 파일 타입 지정
