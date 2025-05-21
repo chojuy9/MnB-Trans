@@ -1,3 +1,6 @@
+# M&B 모드 번역기 (구버전 / 간단하게 쓸 사람만 쓰세요)
+# 이 코드는 Google Gemini API를 사용하여 Mount & Blade 모드의 영어 텍스트를 한국어로 번역하는 GUI 애플리케이션입니다.
+
 import tkinter as tk
 from tkinter import scrolledtext, filedialog, messagebox, simpledialog
 import google.generativeai as genai
